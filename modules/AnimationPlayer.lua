@@ -5,13 +5,6 @@ local TweenInfos = shared.Faker.Modules.TweenInfos
 local animationPlayer = {}
 animationPlayer.__index = animationPlayer
 
-local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
-local TweenInfos = require(script.TweenInfos)
-
-local animationPlayer = {}
-animationPlayer.__index = animationPlayer
-
 function animationPlayer.new(model: Model)
 	local self = setmetatable({
 		model = model,
