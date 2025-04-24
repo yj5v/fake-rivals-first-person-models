@@ -11,7 +11,9 @@ local function getAnimation(Animations: Folder, animationTrack: AnimationTrack)
 
 		if Animation:GetAttribute("Animation") == animationTrack.Animation.AnimationId then
 			matchingAnimation = Animation
-			print(animationTrack.Animation.AnimationId, matchingAnimation:GetAttribute("Animation"), matchingAnimation.Name)
+			print(animationTrack.Animation.AnimationId)
+			print(matchingAnimation:GetAttribute("Animation"))
+			print(matchingAnimation.Name)
 			break
 		end
 	end
