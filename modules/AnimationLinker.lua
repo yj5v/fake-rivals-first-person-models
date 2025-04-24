@@ -10,10 +10,6 @@ local function getAnimation(Animations: Folder, animationTrack: AnimationTrack)
 		end
 
 		if Animation:GetAttribute("Animation") == animationTrack.Animation.AnimationId then
-			matchingAnimation = Animation
-			print(animationTrack.Animation.AnimationId)
-			print(matchingAnimation:GetAttribute("Animation"))
-			print(matchingAnimation.Name)
 			break
 		end
 	end
@@ -73,15 +69,17 @@ function animationLinker.new(model1: Model, model2: Model)
 		end
 	end
 	
-	table.insert(self.connections, RunService.Heartbeat:Connect(function()
+	table.insert(self.connections, RunService.RenderStepped:Connect(function()
 		model1.PrimaryPart.CFrame = model2.PrimaryPart.CFrame
 		
 		for _,animationTrack: AnimationTrack in Animator:GetPlayingAnimationTracks() do
 			local matchingAnimation = getAnimation(Animations, animationTrack)
 
 			if not matchingAnimation then continue end
+			
+			local animation = self.animator:getAnimation(matchingAnimation.Name)
 
-			if not self.animator:getAnimation(matchingAnimation.Name) then
+			if not animation then
 				repeat task.wait(0) until animationTrack.TimePosition > 0
 				self.animator:playAnimation(
 					matchingAnimation.Name, 
@@ -94,6 +92,10 @@ function animationLinker.new(model1: Model, model2: Model)
 				)
 			else
 				self.animator:adjustSpeed(matchingAnimation.Name, animationTrack.Speed)
+			end
+			
+			if not animationTrack.IsPlaying and animationTrack.TimePosition < animationTrack.Length then
+				self.animator:stopAnimation(matchingAnimation.Name, 0.1)
 			end
 		end
 	end))
