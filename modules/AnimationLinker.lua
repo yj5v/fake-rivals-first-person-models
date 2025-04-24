@@ -1,5 +1,5 @@
 local RunService = game:GetService("RunService")
-local AnimationPlayer = shared.Faker.Modules.AnimationPlayer
+local AnimationPlayer = require(script:WaitForChild("AnimationPlayer"))
 
 local function getAnimation(Animations: Folder, animationTrack: AnimationTrack)
 	local matchingAnimation = nil
@@ -11,12 +11,15 @@ local function getAnimation(Animations: Folder, animationTrack: AnimationTrack)
 
 		if Animation:GetAttribute("Animation") == animationTrack.Animation.AnimationId then
 			matchingAnimation = Animation
+			print(animationTrack.Animation.AnimationId, matchingAnimation:GetAttribute("Animation"), matchingAnimation.Name)
 			break
 		end
 	end
 	
 	if not matchingAnimation then
 		warn("Couldn't find matching animation for: "..animationTrack.Animation.Name)
+		
+		print(animationTrack.Animation.AnimationId)
 	end
 	
 	return matchingAnimation
