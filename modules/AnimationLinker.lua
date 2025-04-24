@@ -71,7 +71,9 @@ function animationLinker.new(model1: Model, model2: Model)
 		model1.PrimaryPart.CFrame = model2.PrimaryPart.CFrame
 		
 		for _,Descendant in model2:GetDescendants() do
-			Descendant.Transparency = 1
+			if Descendant:IsA("BasePart") then
+				Descendant.Transparency = 1
+			end
 		end
 		
 		for _,animationTrack: AnimationTrack in Animator:GetPlayingAnimationTracks() do
