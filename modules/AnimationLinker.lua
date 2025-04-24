@@ -1,5 +1,5 @@
 local RunService = game:GetService("RunService")
-local AnimationPlayer = require(script:WaitForChild("AnimationPlayer"))
+local AnimationPlayer = shared.Faker.Modules.AnimationPlayer
 
 local function getAnimation(Animations: Folder, animationTrack: AnimationTrack)
 	local matchingAnimation = nil
