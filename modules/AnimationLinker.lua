@@ -57,10 +57,9 @@ function animationLinker.new(model1: Model, model2: Model)
 		
 		self.animator:loadAnimation(Animation)
 	end
-	
+
+	task.delay(0.5, function()
 	for _,Descendant in model2:GetDescendants() do
-		print("Ok")
-		
 		if Descendant:IsA("BasePart") then
 			self.originalTransparencies[Descendant] = Descendant.Transparency
 			Descendant.Transparency = 1
@@ -69,6 +68,7 @@ function animationLinker.new(model1: Model, model2: Model)
 			Descendant.Texture = "rbxassetid://0"
 		end
 	end
+end)
 	
 	table.insert(self.connections, RunService.RenderStepped:Connect(function()
 		model1.PrimaryPart.CFrame = model2.PrimaryPart.CFrame
@@ -96,7 +96,7 @@ function animationLinker.new(model1: Model, model2: Model)
 			end
 			
 			if not animationTrack.IsPlaying and animationTrack.TimePosition < animationTrack.Length then
-				self.animator:stopAnimation(matchingAnimation.Name, 0.1)
+				self.animator:stopAnimation(matchingAnimation.Name, 0.08)
 			end
 		end
 	end))
@@ -114,7 +114,7 @@ function animationLinker.new(model1: Model, model2: Model)
 			animationTrack.Priority.Value, 
 			animationTrack.Speed, 
 			animationTrack.Looped, 
-			0.1
+			0.08
 		)
 	end))
 	
