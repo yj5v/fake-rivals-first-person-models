@@ -202,6 +202,7 @@ function animationPlayer:stopAnimation(name: string, fade: boolean?)
 	for _, anim in self.activeAnimations do
 		if anim.name == name then
 			if fade then
+				anim.startWeight = anim.Weight
 				anim.fadeDirection = -1
 				anim.fading = true
 				anim.stoppingWithFade = true
