@@ -10,17 +10,17 @@ local function getAnimation(Animations: Folder, animationTrack: AnimationTrack)
 		end
 
 		if Animation:GetAttribute("Animation") == animationTrack.Animation.AnimationId then
-			return matchingAnimation
+			matchingAnimation = Animation
 			break
 		end
 	end
-	
+
 	if not matchingAnimation then
 		warn("Couldn't find matching animation for: "..animationTrack.Animation.Name)
-		
+
 		print(animationTrack.Animation.AnimationId)
 	end
-	
+
 	return matchingAnimation
 end
 
@@ -35,29 +35,29 @@ function animationLinker.new(model1: Model, model2: Model)
 	elseif not model1:FindFirstChild("Animations") then
 		return warn("Animations folder is required.")
 	end
-	
+
 	local Animator: Animator = model2:FindFirstChildWhichIsA("AnimationController"):FindFirstChildWhichIsA("Animator")
 	local Animations = model1:FindFirstChild("Animations")
-	
+
 	local self = setmetatable({
 		model1 = model1,
 		model2 = model2,
-		
+
 		animator = AnimationPlayer.new(model1),
 		connections = {},
-		
+
 		originalShirtTextures = {},
 		originalTransparencies = {},
 	}, animationLinker)
-	
+
 	for _,Animation in Animations:GetChildren() do
 		if not Animation:IsA("KeyframeSequence") then
 			continue
 		end
-		
+
 		self.animator:loadAnimation(Animation)
 	end
-	
+
 	for _,Descendant in model2:GetDescendants() do
 		if Descendant:IsA("BasePart") then
 			self.originalTransparencies[Descendant] = Descendant.Transparency
@@ -67,22 +67,22 @@ function animationLinker.new(model1: Model, model2: Model)
 			Descendant.Texture = "rbxassetid://0"
 		end
 	end
-	
+
 	table.insert(self.connections, RunService.RenderStepped:Connect(function()
 		model1.PrimaryPart.CFrame = model2.PrimaryPart.CFrame
-		
+
 		for _,Descendant in model2:GetDescendants() do
 			if Descendant:IsA("BasePart") then
 				Descendant.Transparency = 1
 				print(Descendant.Transparency)
 			end
 		end
-		
+
 		for _,animationTrack: AnimationTrack in Animator:GetPlayingAnimationTracks() do
 			local matchingAnimation = getAnimation(Animations, animationTrack)
 
 			if not matchingAnimation then continue end
-			
+
 			local animation = self.animator:getAnimation(matchingAnimation.Name)
 
 			if not animation then
@@ -99,13 +99,13 @@ function animationLinker.new(model1: Model, model2: Model)
 			else
 				self.animator:adjustSpeed(matchingAnimation.Name, animationTrack.Speed)
 			end
-			
+
 			if not animationTrack.IsPlaying and animationTrack.TimePosition < animationTrack.Length then
 				self.animator:stopAnimation(matchingAnimation.Name, 0.1)
 			end
 		end
 	end))
-	
+
 	table.insert(self.connections, Animator.AnimationPlayed:Connect(function(animationTrack)
 		local matchingAnimation = getAnimation(Animations, animationTrack)
 
@@ -122,7 +122,7 @@ function animationLinker.new(model1: Model, model2: Model)
 			0.1
 		)
 	end))
-	
+
 	return self
 end
 
@@ -130,7 +130,7 @@ function animationLinker:Destroy()
 	for _,connection in self.connections do
 		connection:Disconnect()
 	end
-	
+
 	for _,Descendant in self.model2:GetDescendants() do
 		if Descendant:IsA("BasePart") then
 			Descendant.Transparency = self.originalTransparencies[Descendant]
@@ -138,11 +138,11 @@ function animationLinker:Destroy()
 			Descendant.Texture = self.originalShirtTextures[Descendant]
 		end
 	end
-	
+
 	self.model1:Destroy()
-	
+
 	self.animator:Destroy()
-	
+
 	setmetatable(self, nil)
 	self = nil
 end
