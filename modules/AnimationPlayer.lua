@@ -211,7 +211,6 @@ function animationPlayer:stopAnimation(name: string, fade: boolean?)
 					self._animator:Stop(name)
 				end
 			end
-			anim.playing = false
 		end
 	end
 end
