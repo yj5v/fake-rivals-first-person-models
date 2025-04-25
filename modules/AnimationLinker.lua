@@ -79,9 +79,13 @@ function animationLinker.new(model1: Model, model2: Model)
 		model1.PrimaryPart.CFrame = model2.PrimaryPart.CFrame
 
 		for _,Descendant in model2:GetDescendants() do
+			local MatchingInstance = model2:FindFirstChild(Descendant.Name, false)
+			
 			if Descendant:IsA("BasePart") then
 				Descendant.Transparency = 1
 				print(Descendant.Transparency)
+			elseif Descendant:IsA("Attachment") and MatchingInstance then
+				Descendant.CFrame = MatchingInstance.CFrame
 			end
 		end
 
