@@ -132,7 +132,7 @@ function animationLinker.new(model1: Model, model2: Model)
 			animationTrack.Priority.Value, 
 			animationTrack.Speed, 
 			animationTrack.Looped, 
-			0.05
+			0.1
 		)
 	end))
 
