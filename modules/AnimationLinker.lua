@@ -61,7 +61,9 @@ function animationLinker.new(model1: Model, model2: Model)
 	end
 
 	for _,Descendant in model2:GetDescendants() do
-		local MatchingInstance = model2:FindFirstChild(Descendant.Name, false)
+		local MatchingInstance = model1:FindFirstChild(Descendant.Name, true)
+		
+		print(Descendant.Name, if MatchingInstance then MatchingInstance.Name else nil)
 		
 		if Descendant:IsA("BasePart") then
 			self.originalTransparencies[Descendant] = Descendant.Transparency
@@ -71,21 +73,21 @@ function animationLinker.new(model1: Model, model2: Model)
 			Descendant.Texture = "rbxassetid://0"
 		elseif Descendant:IsA("Attachment") and MatchingInstance then
 			self.originalAttachments[Descendant] = Descendant.CFrame
-			Descendant.CFrame = MatchingInstance.CFrame
+			Descendant.CFrame = Descendant.Parent.CFrame:ToObjectSpace(MatchingInstance.WorldCFrame)
 		end
 	end
 
-	table.insert(self.connections, RunService.RenderStepped:Connect(function()
+	table.insert(self.connections, RunService.Heartbeat:Connect(function()
 		model1.PrimaryPart.CFrame = model2.PrimaryPart.CFrame
 
 		for _,Descendant in model2:GetDescendants() do
-			local MatchingInstance = model2:FindFirstChild(Descendant.Name, false)
+			local MatchingInstance = model1:FindFirstChild(Descendant.Name, true)
 			
 			if Descendant:IsA("BasePart") then
 				Descendant.Transparency = 1
 				print(Descendant.Transparency)
 			elseif Descendant:IsA("Attachment") and MatchingInstance then
-				Descendant.CFrame = MatchingInstance.CFrame
+				Descendant.CFrame = Descendant.Parent.CFrame:ToObjectSpace(MatchingInstance.WorldCFrame)
 			end
 		end
 
