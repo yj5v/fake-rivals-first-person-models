@@ -5,6 +5,13 @@ local TweenInfos = shared.Faker.Modules.TweenInfos
 local animationPlayer = {}
 animationPlayer.__index = animationPlayer
 
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
+local TweenInfos = require(script.TweenInfos)
+
+local animationPlayer = {}
+animationPlayer.__index = animationPlayer
+
 function animationPlayer.new(model: Model)
 	local self = setmetatable({
 		model = model,
@@ -53,22 +60,22 @@ function animationPlayer.new(model: Model)
 
 			-- Fade logic
 			if anim.fading then
-				anim.fadeProgress += dt / anim.fadeTime
-				local alpha = math.clamp(anim.fadeProgress, 0, 1)
+				local fadeDuration = math.max(anim.fadeTime, 0.001) -- Avoid division by 0
+				anim.fadeProgress += dt / fadeDuration
+				local clamped = math.clamp(anim.fadeProgress, 0, 1)
 
 				if anim.fadeDirection == 1 then
-					anim.weight = anim.startWeight + alpha * (anim.targetWeight - anim.startWeight)
+					anim.weight = anim.startWeight + clamped * (anim.targetWeight - anim.startWeight)
 				else
-					anim.weight = anim.startWeight * (1 - alpha)
+					anim.weight = anim.startWeight * (1 - clamped)
 				end
 
-				if anim.fadeProgress >= 1 then
+				if clamped >= 1 then
+					anim.fading = false
 					if anim.fadeDirection == 1 then
 						anim.weight = anim.targetWeight
-						anim.fading = false
 					else
 						anim.weight = 0
-						anim.fading = false
 						anim.remove = true
 					end
 				end
@@ -201,7 +208,6 @@ function animationPlayer:stopAnimation(name, fadeTime)
             anim.fadeTime = fadeTime
             anim.fadeProgress = 0
             anim.fading = true
-            anim.playing = false
             break
         end
     end
