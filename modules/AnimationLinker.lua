@@ -61,7 +61,7 @@ function animationLinker.new(model1: Model, model2: Model)
 	end
 
 	for _,Descendant in model2:GetDescendants() do
-		local MatchingInstance = model2:FindFirstChild(Descendant.Name, true)
+		local MatchingInstance = model2:FindFirstChild(Descendant.Name, false)
 		
 		if Descendant:IsA("BasePart") then
 			self.originalTransparencies[Descendant] = Descendant.Transparency
