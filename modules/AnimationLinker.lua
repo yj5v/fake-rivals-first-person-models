@@ -77,7 +77,7 @@ function animationLinker.new(model1: Model, model2: Model)
 		end
 	end
 
-	table.insert(self.connections, RunService.Heartbeat:Connect(function()
+	table.insert(self.connections, RunService.RenderStepped:Connect(function()
 		model1.PrimaryPart.CFrame = model2.PrimaryPart.CFrame
 
 		for _,Descendant in model2:GetDescendants() do
