@@ -73,6 +73,7 @@ function animationLinker.new(model1: Model, model2: Model)
 		for _,Descendant in model2:GetDescendants() do
 			if Descendant:IsA("BasePart") then
 				Descendant.Transparency = 1
+				print(Descendant.Transparency)
 			end
 		end
 		
