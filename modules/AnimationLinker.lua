@@ -48,6 +48,8 @@ function animationLinker.new(model1: Model, model2: Model)
 
 		originalShirtTextures = {},
 		originalTransparencies = {},
+		
+		originalAttachments = {},
 	}, animationLinker)
 
 	for _,Animation in Animations:GetChildren() do
@@ -59,12 +61,17 @@ function animationLinker.new(model1: Model, model2: Model)
 	end
 
 	for _,Descendant in model2:GetDescendants() do
+		local MatchingInstance = model2:FindFirstChild(Descendant.Name, true)
+		
 		if Descendant:IsA("BasePart") then
 			self.originalTransparencies[Descendant] = Descendant.Transparency
 			Descendant.Transparency = 1
 		elseif Descendant:IsA("Decal") then
 			self.originalShirtTextures[Descendant] = Descendant.Texture
 			Descendant.Texture = "rbxassetid://0"
+		elseif Descendant:IsA("Attachment") and MatchingInstance then
+			self.originalAttachments[Descendant] = Descendant.CFrame
+			Descendant.CFrame = MatchingInstance.CFrame
 		end
 	end
 
@@ -136,6 +143,8 @@ function animationLinker:Destroy()
 			Descendant.Transparency = self.originalTransparencies[Descendant]
 		elseif Descendant:IsA("Decal") then
 			Descendant.Texture = self.originalShirtTextures[Descendant]
+		elseif Descendant:IsA("Attachment") then
+			Descendant.CFrame = self.originalAttachments[Descendant]	
 		end
 	end
 
