@@ -21,7 +21,7 @@ function animationPlayer.new(model: Model)
 			self.motorCache[descendant.Part1.Name] = descendant
 		end
 	end
-	
+
 	for name, motor in pairs(self.motorCache) do
 		self.defaultPose[name] = motor.Transform
 	end
@@ -40,7 +40,7 @@ function animationPlayer.new(model: Model)
 			if anim.playing then
 				local animData = self.animations[anim.name]
 				local duration = animData and (animData.endTime - animData.startTime) or 1
-				
+
 				anim.time += (dt * anim.speed) / duration
 
 				if not anim.looped and anim.time >= 0.999 then -- weirdass solution
@@ -66,7 +66,12 @@ function animationPlayer.new(model: Model)
 				if clamped >= 1 then
 					anim.fading = false
 					if anim.fadeDirection == 1 then
-						anim.weight = anim.targetWeight
+						if anim.stoppingWithFade then
+							anim.fadeDirection = -1
+							anim.fading = true
+						else
+							anim.weight = anim.targetWeight
+						end
 					else
 						anim.weight = 0
 						anim.remove = true
@@ -105,7 +110,7 @@ function animationPlayer.new(model: Model)
 				boneWeights[bone] = currentWeight + blendWeight
 			end
 		end
-		
+
 		for boneName, motor in pairs(self.motorCache) do
 			local weight = boneWeights[boneName] or 0
 			if weight < 1 then
@@ -179,7 +184,8 @@ function animationPlayer:playAnimation(name: string, weight: number, priority: n
 		fadeDirection = 1,
 		fadeTime = fadeTime or 0.2,
 		fadeProgress = 0,
-		fading = true
+		fading = true,
+		stoppingWithFade = false,
 	}
 
 	for _, a in self.activeAnimations do
@@ -192,18 +198,21 @@ function animationPlayer:playAnimation(name: string, weight: number, priority: n
 	self._running = true
 end
 
-function animationPlayer:stopAnimation(name, fadeTime)
-    fadeTime = fadeTime or 0.2
-    for _, anim in self.activeAnimations do
-        if anim.name == name and not anim.remove then
-            anim.startWeight = anim.weight
-            anim.fadeDirection = -1
-            anim.fadeTime = fadeTime
-            anim.fadeProgress = 0
-            anim.fading = true
-            break
-        end
-    end
+function AnimationController:stopAnimation(name: string, fade: boolean?)
+	local anim = self._activeAnimations[name]
+	if anim then
+		if fade then
+			anim.fadeDirection = -1
+			anim.fading = true
+			anim.stoppingWithFade = true
+		else
+			self._activeAnimations[name] = nil
+			if self._animator then
+				self._animator:Stop(name)
+			end
+		end
+		anim.playing = false
+	end
 end
 
 function animationPlayer:getAnimation(name)
@@ -226,9 +235,9 @@ function animationPlayer:Destroy()
 	for _, anim in self.activeAnimations do
 		self:stopAnimation(anim.name, 0)
 	end
-	
+
 	task.wait(0)
-	
+
 	self._heartbeatConnection:Disconnect()
 	setmetatable(self, nil)
 	self = nil
