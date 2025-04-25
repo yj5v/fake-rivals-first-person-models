@@ -10,6 +10,7 @@ local function getAnimation(Animations: Folder, animationTrack: AnimationTrack)
 		end
 
 		if Animation:GetAttribute("Animation") == animationTrack.Animation.AnimationId then
+			return matchingAnimation
 			break
 		end
 	end
