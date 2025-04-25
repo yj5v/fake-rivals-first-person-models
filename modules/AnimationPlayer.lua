@@ -199,19 +199,20 @@ function animationPlayer:playAnimation(name: string, weight: number, priority: n
 end
 
 function animationPlayer:stopAnimation(name: string, fade: boolean?)
-	local anim = self._activeAnimations[name]
-	if anim then
-		if fade then
-			anim.fadeDirection = -1
-			anim.fading = true
-			anim.stoppingWithFade = true
-		else
-			self._activeAnimations[name] = nil
-			if self._animator then
-				self._animator:Stop(name)
+	for _, anim in self.activeAnimations do
+		if anim.name == name then
+			if fade then
+				anim.fadeDirection = -1
+				anim.fading = true
+				anim.stoppingWithFade = true
+			else
+				self._activeAnimations[name] = nil
+				if self._animator then
+					self._animator:Stop(name)
+				end
 			end
+			anim.playing = false
 		end
-		anim.playing = false
 	end
 end
 
