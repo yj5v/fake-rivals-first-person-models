@@ -114,7 +114,7 @@ function animationLinker.new(model1: Model, model2: Model)
 			end
 
 			if not animationTrack.IsPlaying and animationTrack.TimePosition < animationTrack.Length then
-				self.animator:stopAnimation(matchingAnimation.Name, 0.1)
+				self.animator:stopAnimation(matchingAnimation.Name, true)
 			end
 		end
 	end))
@@ -132,7 +132,7 @@ function animationLinker.new(model1: Model, model2: Model)
 			animationTrack.Priority.Value, 
 			animationTrack.Speed, 
 			animationTrack.Looped, 
-			0.1
+			0.05
 		)
 	end))
 
