@@ -198,7 +198,7 @@ function animationPlayer:playAnimation(name: string, weight: number, priority: n
 	self._running = true
 end
 
-function AnimationController:stopAnimation(name: string, fade: boolean?)
+function animationPlayer:stopAnimation(name: string, fade: boolean?)
 	local anim = self._activeAnimations[name]
 	if anim then
 		if fade then
