@@ -26,7 +26,7 @@ function animationPlayer.new(model: Model)
 		self.defaultPose[name] = motor.Transform
 	end
 
-	self._heartbeatConnection = RunService.RenderStepped:Connect(function(dt)
+	self._heartbeatConnection = RunService.Heartbeat:Connect(function(dt)
 		if not self._running then return end
 
 		for i = #self.activeAnimations, 1, -1 do
@@ -43,10 +43,11 @@ function animationPlayer.new(model: Model)
 
 				anim.time += (dt * anim.speed) / duration
 
-				if not anim.looped and anim.time >= 1 then -- weirdass solution
-					anim.time = 1
+				if not anim.looped and anim.time >= 0.99 then -- weirdass solution
+					anim.time = 0.99
+					
 					if not anim.fading and not anim.remove then
-						self:stopAnimation(anim.name, 0.15)
+						self:stopAnimation(anim.name, 0.1)
 					end
 				end
 			end
@@ -61,17 +62,13 @@ function animationPlayer.new(model: Model)
 					anim.weight = anim.startWeight + clamped * (anim.targetWeight - anim.startWeight)
 				else
 					anim.weight = anim.startWeight * (1 - clamped)
+					print("ok", anim.weight, anim.fadeProgress)
 				end
 
 				if clamped >= 1 then
 					anim.fading = false
 					if anim.fadeDirection == 1 then
-						if anim.stoppingWithFade then
-							anim.fadeDirection = -1
-							anim.fading = true
-						else
-							anim.weight = anim.targetWeight
-						end
+						anim.weight = anim.targetWeight
 					else
 						anim.weight = 0
 						anim.remove = true
@@ -199,16 +196,19 @@ function animationPlayer:playAnimation(name: string, weight: number, priority: n
 end
 
 function animationPlayer:stopAnimation(name: string, fadeTime: number)
+	print("stopped")
+	
 	for _, anim in self.activeAnimations do
 		if anim.name == name then
-			if fade then
+			if fadeTime then
 				anim.fadeTime = fadeTime
 				anim.startWeight = anim.weight
+				anim.targetWeight = 0
 				anim.fadeDirection = -1
 				anim.fading = true
-				anim.stoppingWithFade = true
 				anim.fadeProgress = 0
 			else
+				print("nope")
 				anim.remove = true
 			end
 		end
