@@ -46,7 +46,7 @@ function animationPlayer.new(model: Model)
 				if not anim.looped and anim.time >= 1 then -- weirdass solution
 					anim.time = 1
 					if not anim.fading and not anim.remove then
-						animationPlayer:stopAnimation(anim.name, true)
+						self:stopAnimation(anim.name, 0.1)
 					end
 				end
 			end
@@ -198,10 +198,11 @@ function animationPlayer:playAnimation(name: string, weight: number, priority: n
 	self._running = true
 end
 
-function animationPlayer:stopAnimation(name: string, fade: boolean?)
+function animationPlayer:stopAnimation(name: string, fadeTime: number)
 	for _, anim in self.activeAnimations do
 		if anim.name == name then
 			if fade then
+				anim.fadeTime = fadeTime
 				anim.startWeight = anim.weight
 				anim.fadeDirection = -1
 				anim.fading = true
