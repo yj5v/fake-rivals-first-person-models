@@ -47,7 +47,7 @@ function animationPlayer.new(model: Model)
 					anim.time = 0.99
 					
 					if not anim.fading and not anim.remove then
-						self:stopAnimation(anim.name, 0.1)
+						self:stopAnimation(anim.name, 0.05)
 					end
 				end
 			end
