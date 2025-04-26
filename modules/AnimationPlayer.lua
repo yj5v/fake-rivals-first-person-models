@@ -43,10 +43,10 @@ function animationPlayer.new(model: Model)
 
 				anim.time += (dt * anim.speed) / duration
 
-				if not anim.looped and anim.time >= 0.999 then -- weirdass solution
-					anim.time = 0.999
+				if not anim.looped and anim.time >= 1 then -- weirdass solution
+					anim.time = 1
 					if not anim.fading and not anim.remove then
-						self:stopAnimation(anim.name, 0.2)
+						self:stopAnimation(anim.name, true)
 					end
 				end
 			end
