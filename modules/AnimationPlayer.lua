@@ -207,10 +207,7 @@ function animationPlayer:stopAnimation(name: string, fade: boolean?)
 				anim.fading = true
 				anim.stoppingWithFade = true
 			else
-				self._activeAnimations[name] = nil
-				if self._animator then
-					self._animator:Stop(name)
-				end
+				anim.remove = true
 			end
 		end
 	end
