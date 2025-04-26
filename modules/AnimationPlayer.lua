@@ -46,7 +46,7 @@ function animationPlayer.new(model: Model)
 				if not anim.looped and anim.time >= 1 then -- weirdass solution
 					anim.time = 1
 					if not anim.fading and not anim.remove then
-						self:stopAnimation(anim.name, 0.1)
+						self:stopAnimation(anim.name, 0.15)
 					end
 				end
 			end
