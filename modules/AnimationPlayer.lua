@@ -249,7 +249,7 @@ end
 
 function animationPlayer:stopAnimation(name: string, fadeSpeed: number)
 	for _, anim in self.activeAnimations do
-		if anim.name == name and not anim.remove and anim.targetWeight >= anim.weight then
+		if anim.name == name and not anim.remove and anim.targetWeight ~= 0 then
 			anim.targetWeight = 0
 			anim.fadeSpeed = fadeSpeed
 			
