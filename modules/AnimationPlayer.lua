@@ -32,13 +32,13 @@ function animationPlayer.new(model: Model)
 		for i = #self.activeAnimations, 1, -1 do
 			local anim = self.activeAnimations[i]
 			
-			print(math.abs(anim.weight - anim.targetWeight))
-			
 			if math.abs(anim.weight - anim.targetWeight) <= 0 and anim.targetWeight == 0 then
 				anim.remove = true
 			end
 
 			if anim.remove then
+				print("Ok")
+				
 				table.remove(self.activeAnimations, i)
 				continue
 			end
@@ -46,7 +46,8 @@ function animationPlayer.new(model: Model)
 			if anim.playing then
 				local animData = self.animations[anim.name]
 				local duration = animData and (animData.endTime - animData.startTime) or 1
-
+				
+				anim.lastTime = anim.time
 				anim.time += (dt * anim.speed) / duration
 
 				if not anim.looped and anim.time >= 0.99 then
@@ -70,6 +71,8 @@ function animationPlayer.new(model: Model)
 			else
 				anim.weight = math.clamp(anim.weight, anim.targetWeight, 1)
 			end
+			
+			self:checkEvents(anim.name, anim.lastTime % 1, anim.time % 1, anim.looped)
 		end
 
 		local blendedPoses = {}
@@ -127,6 +130,50 @@ function animationPlayer.new(model: Model)
 	return self
 end
 
+function animationPlayer:addEvent(animationName: string, t: number, event: () -> ())
+	local animation = self.animations[animationName]
+	
+	if not animation then
+		return warn("Animation not found.")
+	end
+	
+	for _,keyFrame in animation.keyFrames do
+		if keyFrame.time ~= t then
+			continue
+		end
+		
+		if keyFrame.event then
+			return warn("Event already applied.")
+		end
+		
+		keyFrame.event = event
+	end
+end
+
+function animationPlayer:checkEvents(animationName, lastTime, currentTime, looped)
+	local animation = self.animations[animationName]
+	if not animation then return end
+	
+
+	if currentTime < lastTime and looped then
+		for _, keyFrame in animation.keyFrames do
+			if keyFrame.time >= lastTime or keyFrame.time <= currentTime then
+				if keyFrame.event then
+					keyFrame.event(self.model)
+				end
+			end
+		end
+	else
+		for _, keyFrame in animation.keyFrames do
+			if keyFrame.time >= lastTime and keyFrame.time <= currentTime then
+				if keyFrame.event then
+					keyFrame.event(self.model)
+				end
+			end
+		end
+	end
+end
+
 function animationPlayer:loadAnimation(animationTrack: AnimationTrack)
 	if not animationTrack:IsA("KeyframeSequence") then return warn("Provided value not keyFrameSequence") end
 	if self.animations[animationTrack.Name] then return warn("Animation already loaded") end
@@ -140,6 +187,8 @@ function animationPlayer:loadAnimation(animationTrack: AnimationTrack)
 			poses = {},
 			time = keyFrame.Time,
 			endTime = keyFramesChildren[#keyFramesChildren].Time,
+			
+			event = nil,
 		}
 
 		for _, pose in keyFrame:GetDescendants() do
@@ -158,6 +207,8 @@ function animationPlayer:loadAnimation(animationTrack: AnimationTrack)
 		keyFrames = keyFrames,
 		startTime = keyFrames[1].time,
 		endTime = keyFrames[#keyFrames].time,
+		
+		events = {},
 	}
 end
 
@@ -166,7 +217,10 @@ function animationPlayer:playAnimation(name: string, weight: number, priority: n
 		name = name,
 		weight = 0,
 		priority = priority or 1,
+		
+		lastTime = startTime or 0,
 		time = startTime or 0,
+		
 		speed = speed or 1,
 		playing = true,
 		looped = looped or false,
@@ -174,6 +228,8 @@ function animationPlayer:playAnimation(name: string, weight: number, priority: n
 		
 		targetWeight = weight or 1,
 		fadeSpeed = fadeSpeed or 0,
+		
+		events = {},
 	}
 
 	for i = #self.activeAnimations, 1, -1 do
