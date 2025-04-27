@@ -79,6 +79,8 @@ function animationLinker.new(model1: Model, model2: Model, events: {})
 		elseif Descendant:IsA("Attachment") and MatchingInstance then
 			self.originalAttachments[Descendant] = Descendant.CFrame
 			Descendant.CFrame = Descendant.Parent.CFrame:ToObjectSpace(MatchingInstance.WorldCFrame)
+		elseif Descendant:IsA("ParticleEmitter") or Descendant:IsA("Beam") or Descendant:IsA("Light") then
+			Descendant:Destroy()
 		end
 	end
 
@@ -119,7 +121,7 @@ function animationLinker.new(model1: Model, model2: Model, events: {})
 			end
 
 			if not animationTrack.IsPlaying and animationTrack.TimePosition < animationTrack.Length then
-				self.animator:stopAnimation(matchingAnimation.Name, 0.2)
+				self.animator:stopAnimation(matchingAnimation.Name, 0.3)
 			end
 		end
 	end))
@@ -147,7 +149,7 @@ function animationLinker.new(model1: Model, model2: Model, events: {})
 				animationTrack.Speed, 
 				animationTrack.Looped, 
 				0,
-				0.2
+				0.3
 			)
 		else
 			print("ok")
