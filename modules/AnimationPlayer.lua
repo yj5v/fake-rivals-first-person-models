@@ -26,7 +26,7 @@ function animationPlayer.new(model: Model)
 		self.defaultPose[name] = motor.Transform
 	end
 
-	self._heartbeatConnection = RunService.RenderStepped:Connect(function(dt)
+	self._heartbeatConnection = RunService.Heartbeat:Connect(function(dt)
 		if not self._running then return end
 
 		for i = #self.activeAnimations, 1, -1 do
