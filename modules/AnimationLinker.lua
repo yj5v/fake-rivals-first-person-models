@@ -122,6 +122,7 @@ function animationLinker.new(model1: Model, model2: Model, events: {})
 
 			if not animationTrack.IsPlaying and animationTrack.TimePosition < animationTrack.Length then
 				self.animator:stopAnimation(matchingAnimation.Name, 0.5)
+				print("stopped")
 			end
 		end
 	end))
@@ -151,6 +152,7 @@ function animationLinker.new(model1: Model, model2: Model, events: {})
 				0,
 				0.5
 			)
+			print("played")
 		else
 			print("ok")
 		end
