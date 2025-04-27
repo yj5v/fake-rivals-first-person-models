@@ -1,7 +1,7 @@
 local Players = game:GetService("Players")
 
 local RunService = game:GetService("RunService")
-local AnimationPlayer = shared.Faker.Modules.AnimationPlayer
+local AnimationPlayer = require(script.AnimationPlayer)
 
 local function getByAttribute(container: Instance, targetId: string, attributeName: string)
 	local matchingInstance = nil
@@ -23,7 +23,7 @@ end
 local animationLinker = {}
 animationLinker.__index = animationLinker
 
-function animationLinker.new(model1: Model, model2: Model)
+function animationLinker.new(model1: Model, model2: Model, events: {})
 	if not model2 then
 		return warn("Model 2 is required.")
 	elseif not model2:FindFirstChildWhichIsA("AnimationController") and not model2:FindFirstChildWhichIsA("Humanoid") then
@@ -57,6 +57,12 @@ function animationLinker.new(model1: Model, model2: Model)
 		end
 
 		self.animator:loadAnimation(Animation)
+		
+		if events[Animation.Name] then
+			for t, event in events[Animation.Name] do
+				self.animator:addEvent(Animation.Name, t, event)
+			end
+		end
 	end
 
 	for _,Descendant in model2:GetDescendants() do
@@ -113,7 +119,7 @@ function animationLinker.new(model1: Model, model2: Model)
 			end
 
 			if not animationTrack.IsPlaying and animationTrack.TimePosition < animationTrack.Length then
-				self.animator:stopAnimation(matchingAnimation.Name, 0.25)
+				self.animator:stopAnimation(matchingAnimation.Name, 0.2)
 			end
 		end
 	end))
@@ -141,7 +147,7 @@ function animationLinker.new(model1: Model, model2: Model)
 				animationTrack.Speed, 
 				animationTrack.Looped, 
 				0,
-				0.25
+				0.2
 			)
 		else
 			print("ok")
