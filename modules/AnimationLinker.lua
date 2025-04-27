@@ -1,27 +1,23 @@
+local Players = game:GetService("Players")
+
 local RunService = game:GetService("RunService")
 local AnimationPlayer = shared.Faker.Modules.AnimationPlayer
 
-local function getAnimation(Animations: Folder, animationTrack: AnimationTrack)
-	local matchingAnimation = nil
+local function getByAttribute(container: Instance, targetId: string, attributeName: string)
+	local matchingInstance = nil
 
-	for _,Animation in Animations:GetChildren() do
-		if not Animation:IsA("KeyframeSequence") then
-			continue
-		end
-
-		if Animation:GetAttribute("Animation") == animationTrack.Animation.AnimationId then
-			matchingAnimation = Animation
+	for _, child in container:GetChildren() do
+		if child:GetAttribute(attributeName) == targetId then
+			matchingInstance = child
 			break
 		end
 	end
 
-	if not matchingAnimation then
-		warn("Couldn't find matching animation for: "..animationTrack.Animation.Name)
-
-		print(animationTrack.Animation.AnimationId)
+	if not matchingInstance then
+		warn("Couldn't find matching instance for targetId: " .. targetId)
 	end
 
-	return matchingAnimation
+	return matchingInstance
 end
 
 local animationLinker = {}
@@ -34,10 +30,13 @@ function animationLinker.new(model1: Model, model2: Model)
 		return warn("AnimationController is required.")
 	elseif not model1:FindFirstChild("Animations") then
 		return warn("Animations folder is required.")
+	elseif not model1:FindFirstChild("Sounds") then
+		return warn("Sounds folder is required.")
 	end
 
 	local Animator: Animator = model2:FindFirstChildWhichIsA("AnimationController"):FindFirstChildWhichIsA("Animator")
 	local Animations = model1:FindFirstChild("Animations")
+	local Sounds = model1:FindFirstChild("Sounds")
 
 	local self = setmetatable({
 		model1 = model1,
@@ -79,6 +78,7 @@ function animationLinker.new(model1: Model, model2: Model)
 
 	table.insert(self.connections, RunService.RenderStepped:Connect(function()
 		model1.PrimaryPart.CFrame = model2.PrimaryPart.CFrame
+		model1.Parent = model2.Parent
 
 		for _,Descendant in model2:GetDescendants() do
 			local MatchingInstance = model1:FindFirstChild(Descendant.Name, true)
@@ -91,7 +91,7 @@ function animationLinker.new(model1: Model, model2: Model)
 		end
 
 		for _,animationTrack: AnimationTrack in Animator:GetPlayingAnimationTracks() do
-			local matchingAnimation = getAnimation(Animations, animationTrack)
+			local matchingAnimation = getByAttribute(Animations, animationTrack.Animation.AnimationId, "Animation")
 
 			if not matchingAnimation then continue end
 
@@ -113,13 +113,21 @@ function animationLinker.new(model1: Model, model2: Model)
 			end
 
 			if not animationTrack.IsPlaying and animationTrack.TimePosition < animationTrack.Length then
-				self.animator:stopAnimation(matchingAnimation.Name, 0.2)
+				self.animator:stopAnimation(matchingAnimation.Name, 0.25)
 			end
+		end
+	end))
+	
+	table.insert(self.connections, Players.LocalPlayer.PlayerScripts.Modules.ClientReplicatedClasses.ClientFighter.ClientItem.ChildAdded:Connect(function(child)
+		if child:IsA("Sound") and getByAttribute(Sounds, child.SoundId, "Sound") then
+			child:Stop()
+			child.SoundId = getByAttribute(Sounds, child.SoundId, "Sound").SoundId
+			child:Play()
 		end
 	end))
 
 	table.insert(self.connections, Animator.AnimationPlayed:Connect(function(animationTrack)
-		local matchingAnimation = getAnimation(Animations, animationTrack)
+		local matchingAnimation = getByAttribute(Animations, animationTrack.Animation.AnimationId, "Animation")
 
 		if not matchingAnimation then return end
 
@@ -133,7 +141,7 @@ function animationLinker.new(model1: Model, model2: Model)
 				animationTrack.Speed, 
 				animationTrack.Looped, 
 				0,
-				0.2
+				0.25
 			)
 		else
 			print("ok")
