@@ -77,7 +77,7 @@ function animationLinker.new(model1: Model, model2: Model)
 		end
 	end
 
-	table.insert(self.connections, RunService.RenderStepped:Connect(function()
+	table.insert(self.connections, RunService.Heartbeat:Connect(function()
 		model1.PrimaryPart.CFrame = model2.PrimaryPart.CFrame
 
 		for _,Descendant in model2:GetDescendants() do
@@ -85,7 +85,6 @@ function animationLinker.new(model1: Model, model2: Model)
 			
 			if Descendant:IsA("BasePart") then
 				Descendant.Transparency = 1
-				print(Descendant.Transparency)
 			elseif Descendant:IsA("Attachment") and MatchingInstance then
 				Descendant.CFrame = Descendant.Parent.CFrame:ToObjectSpace(MatchingInstance.WorldCFrame)
 			end
@@ -98,7 +97,7 @@ function animationLinker.new(model1: Model, model2: Model)
 
 			local animation = self.animator:getAnimation(matchingAnimation.Name)
 
-			if not animation then
+			if not animation and animationTrack.TimePosition > 0.01 then
 				repeat task.wait(0) until animationTrack.TimePosition > 0
 				self.animator:playAnimation(
 					matchingAnimation.Name, 
@@ -106,15 +105,15 @@ function animationLinker.new(model1: Model, model2: Model)
 					animationTrack.Priority.Value, 
 					animationTrack.Speed, 
 					animationTrack.Looped,
-					0,
-					(animationTrack.TimePosition / animationTrack.Length)
+					(animationTrack.TimePosition / animationTrack.Length),
+					0
 				)
 			else
 				self.animator:adjustSpeed(matchingAnimation.Name, animationTrack.Speed)
 			end
 
 			if not animationTrack.IsPlaying and animationTrack.TimePosition < animationTrack.Length then
-				self.animator:stopAnimation(matchingAnimation.Name, 0.1)
+				self.animator:stopAnimation(matchingAnimation.Name, 0.2)
 			end
 		end
 	end))
@@ -126,14 +125,19 @@ function animationLinker.new(model1: Model, model2: Model)
 
 		repeat task.wait(0) until animationTrack.TimePosition > 0
 
-		self.animator:playAnimation(
-			matchingAnimation.Name, 
-			animationTrack.WeightTarget, 
-			animationTrack.Priority.Value, 
-			animationTrack.Speed, 
-			animationTrack.Looped, 
-			0.1
-		)
+		if not self.animator:getAnimation(matchingAnimation.Name) then
+			self.animator:playAnimation(
+				matchingAnimation.Name, 
+				animationTrack.WeightTarget, 
+				animationTrack.Priority.Value, 
+				animationTrack.Speed, 
+				animationTrack.Looped, 
+				0,
+				0.2
+			)
+		else
+			print("ok")
+		end
 	end))
 
 	return self
