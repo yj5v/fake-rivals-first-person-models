@@ -178,21 +178,27 @@ function AnimationPlayer:playAnimation(name, weight, priority, speed, looped, st
 		remove = false,
 	}
 
-	print("animation is playinggg")
-
-	for i = #self.activeAnimations, 1, -1 do
-		local a = self.activeAnimations[i]
-
-		print(a.name)
-		if a.name == name then
-			print("animation found")
-			
-			a.remove = true
-		end
-	end
-
 	table.insert(self.activeAnimations, anim)
 	self._running = true
+	
+	print("animation is playinggg")
+
+	for _, a in ipairs(self.activeAnimations) do
+		if a.name == name and a ~= anim then
+			a.playing = true
+			a.time = startTime or 0
+			a.speed = speed or 1
+			a.looped = looped or false
+			a.targetWeight = weight or 1
+			a.fadeSpeed = fadeSpeed or 0.2
+			a.remove = false
+			
+			print("found")
+			
+			anim.remove = true
+			return
+		end
+	end
 end
 
 function AnimationPlayer:stopAnimation(name, fadeSpeed)
@@ -301,5 +307,6 @@ function AnimationPlayer:__calculatePose(t, name)
 
 	return result
 end
+
 
 return AnimationPlayer
