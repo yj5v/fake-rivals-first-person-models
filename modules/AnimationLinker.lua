@@ -103,7 +103,7 @@ function animationLinker.new(model1: Model, model2: Model, events: {})
 		end
 
 		for _, animationTrack: AnimationTrack in Animator:GetPlayingAnimationTracks() do
-			local matchingAnimation = getByAttribute(Animations, animationTrack.AnimationId, "Animation")
+			local matchingAnimation = getByAttribute(Animations, animationTrack.Animation.AnimationId, "Animation")
 			if not matchingAnimation then continue end
 
 			local animation = self.animator:getAnimation(matchingAnimation.Name)
@@ -144,7 +144,7 @@ function animationLinker.new(model1: Model, model2: Model, events: {})
 
 	-- Initial animation rescue if needed
 	table.insert(self.connections, Animator.AnimationPlayed:Connect(function(animationTrack)
-		local matchingAnimation = getByAttribute(Animations, animationTrack.AnimationId, "Animation")
+		local matchingAnimation = getByAttribute(Animations, animationTrack.Animation.AnimationId, "Animation")
 		if not matchingAnimation then return end
 
 		task.spawn(function()
