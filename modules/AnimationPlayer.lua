@@ -166,7 +166,7 @@ end
 function AnimationPlayer:playAnimation(name, weight, priority, speed, looped, startTime, fadeSpeed)
 	for _, a in ipairs(self.activeAnimations) do
 		if a.name == name then
-			AnimationPlayer:stopAnimation(a.name, 0)
+			self:stopAnimation(a.name, 0)
 			print("mango")
 		end
 	end
