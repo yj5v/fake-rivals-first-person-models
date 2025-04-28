@@ -238,8 +238,6 @@ function animationPlayer:playAnimation(name: string, weight: number, priority: n
 			table.remove(self.activeAnimations, i)
 			
 			animData.weight = a.weight
-			
-			break
 		end
 	end
 
