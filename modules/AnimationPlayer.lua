@@ -74,6 +74,8 @@ function animationPlayer.new(model: Model)
 				else
 					anim.weight = math.clamp(anim.weight, anim.targetWeight, 1)
 				end
+			else
+				anim.remove = true
 			end
 			
 			self:checkEvents(anim.name, anim.lastTime % 1, anim.time % 1, anim.looped)
