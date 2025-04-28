@@ -26,7 +26,7 @@ function animationPlayer.new(model: Model)
 		self.defaultPose[name] = motor.Transform
 	end
 
-	self._heartbeatConnection = RunService.Heartbeat:Connect(function(dt)
+	self._heartbeatConnection = RunService.RenderStepped:Connect(function(dt)
 		if not self._running then return end
 
 		for i = #self.activeAnimations, 1, -1 do
@@ -60,10 +60,10 @@ function animationPlayer.new(model: Model)
 			
 			local direction = if anim.targetWeight >= anim.weight then 1 else -1
 
-			anim.weight += 0.15 * direction
+			anim.weight += (dt / anim.fadeSpeed) * direction
 
 			if direction < 0 then
-				print((dt / 0.15) * direction)
+				print((dt / anim.fadeSpeed) * direction)
 			end
 
 			if direction == 1 then
