@@ -5,6 +5,8 @@ local TweenInfos = shared.Faker.Modules.TweenInfos
 local animationPlayer = {}
 animationPlayer.__index = animationPlayer
 
+local EPSILON = 0.01
+
 function animationPlayer.new(model: Model)
 	local self = setmetatable({
 		model = model,
@@ -32,7 +34,22 @@ function animationPlayer.new(model: Model)
 		for i = #self.activeAnimations, 1, -1 do
 			local anim = self.activeAnimations[i]
 
-			if math.abs(anim.weight - anim.targetWeight) <= 0 and anim.targetWeight == 0 then
+			-- Fade logic
+			if anim.fadeSpeed then
+				local direction = if anim.targetWeight >= anim.weight then 1 else -1
+				anim.weight += (dt / anim.fadeSpeed) * direction
+
+				if direction == 1 then
+					anim.weight = math.clamp(anim.weight, 0, anim.targetWeight)
+				else
+					anim.weight = math.clamp(anim.weight, anim.targetWeight, 1)
+				end
+			else
+				anim.remove = true
+			end
+
+			-- 🚨 Correct fade-out removal
+			if math.abs(anim.weight - anim.targetWeight) <= EPSILON and anim.targetWeight == 0 then
 				anim.remove = true
 			end
 
@@ -41,6 +58,7 @@ function animationPlayer.new(model: Model)
 				continue
 			end
 
+			-- Time update
 			if anim.playing then
 				local animData = self.animations[anim.name]
 				local duration = animData and (animData.endTime - animData.startTime) or 1
@@ -56,20 +74,6 @@ function animationPlayer.new(model: Model)
 				end
 			end
 
-			if anim.fadeSpeed then
-				local direction = if anim.targetWeight >= anim.weight then 1 else -1
-
-				anim.weight += (dt / anim.fadeSpeed) * direction
-
-				if direction == 1 then
-					anim.weight = math.clamp(anim.weight, 0, anim.targetWeight)
-				else
-					anim.weight = math.clamp(anim.weight, anim.targetWeight, 1)
-				end
-			else
-				anim.remove = true
-			end
-
 			self:checkEvents(anim.name, anim.lastTime % 1, anim.time % 1, anim.looped)
 		end
 
@@ -82,7 +86,7 @@ function animationPlayer.new(model: Model)
 		end)
 
 		for _, anim in actives do
-			if anim.weight <= 0 or anim.remove then continue end
+			if anim.weight <= 0 then continue end
 
 			local poses = self:__calculatePose(anim.time, anim.name)
 			local w = anim.weight
@@ -184,6 +188,7 @@ function animationPlayer:loadAnimation(animationTrack: AnimationTrack)
 			poses = {},
 			time = keyFrame.Time,
 			endTime = keyFramesChildren[#keyFramesChildren].Time,
+
 			event = nil,
 		}
 
@@ -203,6 +208,7 @@ function animationPlayer:loadAnimation(animationTrack: AnimationTrack)
 		keyFrames = keyFrames,
 		startTime = keyFrames[1].time,
 		endTime = keyFrames[#keyFrames].time,
+
 		events = {},
 	}
 end
@@ -212,23 +218,25 @@ function animationPlayer:playAnimation(name: string, weight: number, priority: n
 		name = name,
 		weight = 0,
 		priority = priority or 1,
+
 		lastTime = startTime or 0,
 		time = startTime or 0,
+
 		speed = speed or 1,
 		playing = true,
 		looped = looped or false,
 		remove = false,
+
 		targetWeight = weight or 1,
 		fadeSpeed = fadeSpeed or 0,
+
 		events = {},
 	}
 
 	for i = #self.activeAnimations, 1, -1 do
 		local a = self.activeAnimations[i]
-		if a.name == name and not a.remove then
-			a.targetWeight = 0
-			a.fadeSpeed = animData.fadeSpeed
-			a.playing = false
+		if a.name == name then
+			table.remove(self.activeAnimations, i)
 			animData.weight = a.weight
 		end
 	end
