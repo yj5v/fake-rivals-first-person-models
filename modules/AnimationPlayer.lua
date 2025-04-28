@@ -2,10 +2,10 @@ local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
 local TweenInfos = shared.Faker.Modules.TweenInfos
 
-local animationPlayer = {}
-animationPlayer.__index = animationPlayer
+local AnimationPlayer = {}
+AnimationPlayer.__index = AnimationPlayer
 
-function animationPlayer.new(model: Model)
+function AnimationPlayer.new(model)
 	local self = setmetatable({
 		model = model,
 		animations = {},
@@ -14,7 +14,7 @@ function animationPlayer.new(model: Model)
 		activeAnimations = {},
 		_running = false,
 		_heartbeatConnection = nil,
-	}, animationPlayer)
+	}, AnimationPlayer)
 
 	for _, descendant in model:GetDescendants() do
 		if descendant:IsA("Motor6D") then
@@ -29,98 +29,99 @@ function animationPlayer.new(model: Model)
 	self._heartbeatConnection = RunService.RenderStepped:Connect(function(dt)
 		if not self._running then return end
 
+		-- Update active animations
 		for i = #self.activeAnimations, 1, -1 do
 			local anim = self.activeAnimations[i]
-			
-			if math.abs(anim.weight - anim.targetWeight) <= 0 and anim.targetWeight == 0 then
-				anim.remove = true
-			end
 
 			if anim.playing then
 				local animData = self.animations[anim.name]
 				local duration = animData and (animData.endTime - animData.startTime) or 1
-				
 				anim.lastTime = anim.time
 				anim.time += (dt * anim.speed) / duration
 
-				if not anim.looped and anim.time >= 0.99 then
-					anim.time = 0.99
-					if not anim.remove then
-						self:stopAnimation(anim.name)
-					end
+				if not anim.looped and anim.time >= 1 then
+					anim.time = 1
+					self:stopAnimation(anim.name)
 				end
 			end
-			
+
+			-- Fade weight
 			if anim.fadeSpeed then
-				local direction = if anim.targetWeight >= anim.weight then 1 else -1
-
-				print(anim.fadeSpeed, anim.weight, anim.targetWeight)
-
-				anim.weight += (dt / anim.fadeSpeed) * direction
-
-				if direction < 0 then
-					print((dt / anim.fadeSpeed) * direction)
-				end
-
-				if direction == 1 then
-					anim.weight = math.clamp(anim.weight, 0, anim.targetWeight)
+				local dir = if anim.targetWeight >= anim.weight then 1 else -1
+				anim.weight += (dt / anim.fadeSpeed) * dir
+				if dir == 1 then
+					anim.weight = math.min(anim.weight, anim.targetWeight)
 				else
-					anim.weight = math.clamp(anim.weight, anim.targetWeight, 1)
+					anim.weight = math.max(anim.weight, anim.targetWeight)
 				end
-			else
+			end
+
+			-- Check for finished fades
+			if anim.weight <= 0 and anim.targetWeight == 0 then
 				anim.remove = true
 			end
-			
+
+			-- Fire events
 			self:checkEvents(anim.name, anim.lastTime % 1, anim.time % 1, anim.looped)
 		end
 
-		local blendedPoses = {}
-		local boneWeights = {}
-		local actives = table.clone(self.activeAnimations)
+		-- Clean up animations AFTER updating poses
+		for i = #self.activeAnimations, 1, -1 do
+			if self.activeAnimations[i].remove then
+				table.remove(self.activeAnimations, i)
+			end
+		end
 
-		table.sort(actives, function(a, b)
+		-- Blending
+		local blended = {}
+		local weights = {}
+		local sorted = table.clone(self.activeAnimations)
+
+		table.sort(sorted, function(a, b)
 			return a.priority > b.priority
 		end)
 
-		for _, anim in actives do
+		for _, anim in sorted do
 			if anim.weight <= 0 then continue end
-
 			local poses = self:__calculatePose(anim.time, anim.name)
 			local w = anim.weight
 
 			for bone, cf in pairs(poses) do
-				local existing = blendedPoses[bone]
-				local currentWeight = boneWeights[bone] or 0
-				local blendWeight = math.min(w, 1 - currentWeight)
+				local current = blended[bone]
+				local currWeight = weights[bone] or 0
+				local blendWeight = math.min(w, 1 - currWeight)
 
-				if existing then
-					local total = currentWeight + blendWeight
-					local alpha = blendWeight / total
-					blendedPoses[bone] = existing:Lerp(cf, alpha)
-				else
-					blendedPoses[bone] = cf
-				end
-				boneWeights[bone] = currentWeight + blendWeight
-			end
-		end
-
-		for boneName, motor in pairs(self.motorCache) do
-			local weight = boneWeights[boneName] or 0
-			if weight < 1 then
-				local current = blendedPoses[boneName]
-				local defaultCf = self.defaultPose[boneName] or CFrame.identity
 				if current then
-					blendedPoses[boneName] = current:Lerp(defaultCf, 1 - weight)
+					local total = currWeight + blendWeight
+					local alpha = blendWeight / total
+					blended[bone] = current:Lerp(cf, alpha)
 				else
-					blendedPoses[boneName] = defaultCf
+					blended[bone] = cf
+				end
+
+				weights[bone] = currWeight + blendWeight
+			end
+		end
+
+		-- Default pose blend
+		for bone, motor in pairs(self.motorCache) do
+			local w = weights[bone] or 0
+			if w < 1 then
+				local current = blended[bone]
+				local default = self.defaultPose[bone] or CFrame.identity
+				if current then
+					blended[bone] = current:Lerp(default, 1 - w)
+				else
+					blended[bone] = default
 				end
 			end
 		end
 
-		for boneName, cframe in pairs(blendedPoses) do
-			local motor = self.motorCache[boneName]
+		-- Apply transforms
+		for bone, cf in pairs(blended) do
+			local motor = self.motorCache[bone]
 			if motor then
-				motor.Transform = cframe
+				motor.Transform = cf
 			end
 		end
 	end)
@@ -129,207 +130,171 @@ function animationPlayer.new(model: Model)
 	return self
 end
 
-function animationPlayer:addEvent(animationName: string, t: number, event: () -> ())
-	local animation = self.animations[animationName]
-	
-	if not animation then
-		return warn("Animation not found.")
-	end
-	
-	for _,keyFrame in animation.keyFrames do
-		if keyFrame.time ~= t then
-			continue
-		end
-		
-		if keyFrame.event then
-			return warn("Event already applied.")
-		end
-		
-		keyFrame.event = event
-	end
-end
+function AnimationPlayer:loadAnimation(keyframeSeq)
+	if not keyframeSeq:IsA("KeyframeSequence") then return warn("Not a KeyframeSequence") end
+	if self.animations[keyframeSeq.Name] then return warn("Already loaded") end
 
-function animationPlayer:checkEvents(animationName, lastTime, currentTime, looped)
-	local animation = self.animations[animationName]
-	if not animation then return end
-	
-
-	if currentTime < lastTime and looped then
-		for _, keyFrame in animation.keyFrames do
-			if keyFrame.time >= lastTime or keyFrame.time <= currentTime then
-				if keyFrame.event then
-					keyFrame.event(self.model)
-				end
-			end
-		end
-	else
-		for _, keyFrame in animation.keyFrames do
-			if keyFrame.time >= lastTime and keyFrame.time <= currentTime then
-				if keyFrame.event then
-					keyFrame.event(self.model)
-				end
-			end
-		end
-	end
-end
-
-function animationPlayer:loadAnimation(animationTrack: AnimationTrack)
-	if not animationTrack:IsA("KeyframeSequence") then return warn("Provided value not keyFrameSequence") end
-	if self.animations[animationTrack.Name] then return warn("Animation already loaded") end
+	local frames = keyframeSeq:GetChildren()
+	table.sort(frames, function(a, b) return a.Time < b.Time end)
 
 	local keyFrames = {}
-	local keyFramesChildren = animationTrack:GetChildren()
-	table.sort(keyFramesChildren, function(a, b) return a.Time < b.Time end)
 
-	for _, keyFrame in keyFramesChildren do
-		local newTable = {
+	for _, frame in ipairs(frames) do
+		local kf = {
 			poses = {},
-			time = keyFrame.Time,
-			endTime = keyFramesChildren[#keyFramesChildren].Time,
-			
-			event = nil,
+			time = frame.Time,
 		}
-
-		for _, pose in keyFrame:GetDescendants() do
+		for _, pose in ipairs(frame:GetDescendants()) do
 			if pose:IsA("Pose") then
-				newTable.poses[pose.Name] = {
+				kf.poses[pose.Name] = {
 					CFrame = pose.CFrame,
 					EasingStyle = pose.EasingStyle,
 					EasingDirection = pose.EasingDirection,
 				}
 			end
 		end
-		table.insert(keyFrames, newTable)
+		table.insert(keyFrames, kf)
 	end
 
-	self.animations[animationTrack.Name] = {
+	self.animations[keyframeSeq.Name] = {
 		keyFrames = keyFrames,
 		startTime = keyFrames[1].time,
 		endTime = keyFrames[#keyFrames].time,
-		
-		events = {},
 	}
 end
 
-function animationPlayer:playAnimation(name: string, weight: number, priority: number, speed: number?, looped: boolean?, startTime: number?, fadeSpeed: number)
-	local animData = {
+function AnimationPlayer:playAnimation(name, weight, priority, speed, looped, startTime, fadeSpeed)
+	local anim = {
 		name = name,
 		weight = 0,
-		priority = priority or 1,
-		
-		lastTime = startTime or 0,
-		time = startTime or 0,
-		
-		speed = speed or 1,
-		playing = true,
-		looped = looped or false,
-		remove = false,
-		
 		targetWeight = weight or 1,
-		fadeSpeed = fadeSpeed or 0,
-		
-		events = {},
+		fadeSpeed = fadeSpeed or 0.2,
+		priority = priority or 1,
+		speed = speed or 1,
+		looped = looped or false,
+		playing = true,
+		time = startTime or 0,
+		lastTime = startTime or 0,
+		remove = false,
 	}
 
 	for i = #self.activeAnimations, 1, -1 do
 		local a = self.activeAnimations[i]
 		if a.name == name then
+			anim.weight = a.weight
 			table.remove(self.activeAnimations, i)
-			
-			animData.weight = a.weight
 		end
 	end
 
-	table.insert(self.activeAnimations, animData)
+	table.insert(self.activeAnimations, anim)
 	self._running = true
 end
 
-function animationPlayer:stopAnimation(name: string, fadeSpeed: number)
-	for _, anim in self.activeAnimations do
-		if anim.name == name and not anim.remove and anim.targetWeight ~= 0 then
-			anim.targetWeight = 0
-			anim.fadeSpeed = fadeSpeed
-			
-			--anim.remove = true
-		end
-	end
-end
-
-function animationPlayer:getAnimation(name)
-	for _, anim in self.activeAnimations do
+function AnimationPlayer:stopAnimation(name, fadeSpeed)
+	for _, anim in ipairs(self.activeAnimations) do
 		if anim.name == name and not anim.remove then
-			return anim
+			anim.targetWeight = 0
+			anim.fadeSpeed = fadeSpeed or 0.2
 		end
 	end
 end
 
-function animationPlayer:adjustSpeed(name, speed)
-	for _, anim in self.activeAnimations do
+function AnimationPlayer:checkEvents(name, lastTime, nowTime, looped)
+	local anim = self.animations[name]
+	if not anim then return end
+
+	for _, kf in ipairs(anim.keyFrames) do
+		if looped and nowTime < lastTime then
+			if kf.time >= lastTime or kf.time <= nowTime then
+				if kf.event then kf.event(self.model) end
+			end
+		else
+			if kf.time >= lastTime and kf.time <= nowTime then
+				if kf.event then kf.event(self.model) end
+			end
+		end
+	end
+end
+
+function AnimationPlayer:addEvent(name, time, callback)
+	local anim = self.animations[name]
+	if not anim then return warn("Animation not found") end
+
+	for _, kf in ipairs(anim.keyFrames) do
+		if kf.time == time then
+			kf.event = callback
+			break
+		end
+	end
+end
+
+function AnimationPlayer:adjustSpeed(name, speed)
+	for _, anim in ipairs(self.activeAnimations) do
 		if anim.name == name then
 			anim.speed = speed
 		end
 	end
 end
 
-function animationPlayer:Destroy()
-	for _, anim in self.activeAnimations do
+function AnimationPlayer:getAnimation(name)
+	for _, anim in ipairs(self.activeAnimations) do
+		if anim.name == name then
+			return anim
+		end
+	end
+end
+
+function AnimationPlayer:Destroy()
+	for _, anim in ipairs(self.activeAnimations) do
 		self:stopAnimation(anim.name)
 	end
-	task.wait(0)
-	self._heartbeatConnection:Disconnect()
+	task.wait()
+	if self._heartbeatConnection then
+		self._heartbeatConnection:Disconnect()
+	end
 	setmetatable(self, nil)
 end
 
-function animationPlayer:__calculatePose(t: number, animationName: string)
-	local animation = self.animations[animationName]
-	if not animation then return warn("Animation not found") end
+function AnimationPlayer:__calculatePose(t, name)
+	local anim = self.animations[name]
+	if not anim then return warn("Animation not found") end
 
 	t = t % 1
-	local startTime = animation.keyFrames[1].time
-	local endTime = animation.endTime
-	local animTime = startTime + t * (endTime - startTime)
+	local startT = anim.startTime
+	local endT = anim.endTime
+	local trueTime = startT + t * (endT - startT)
 
-	local keyFrames = animation.keyFrames
-	local prevKeyframe = keyFrames[1]
-	local nextKeyframe = keyFrames[#keyFrames]
+	local keyFrames = anim.keyFrames
+	local prev = keyFrames[1]
+	local next = keyFrames[#keyFrames]
 
 	for i = 1, #keyFrames - 1 do
-		local kf1 = keyFrames[i]
-		local kf2 = keyFrames[i + 1]
-		if animTime >= kf1.time and animTime <= kf2.time then
-			prevKeyframe = kf1
-			nextKeyframe = kf2
+		local a, b = keyFrames[i], keyFrames[i + 1]
+		if trueTime >= a.time and trueTime <= b.time then
+			prev = a
+			next = b
 			break
 		end
 	end
 
-	if animTime == nextKeyframe.time or animTime == prevKeyframe.time then
-		local raw = animTime == nextKeyframe.time and nextKeyframe or prevKeyframe
-		local result = {}
-		for boneName, pose in pairs(raw.poses) do
-			result[boneName] = pose.CFrame
-		end
-		return result
-	end
+	local alpha = (trueTime - prev.time) / (next.time - prev.time)
+	local result = {}
 
-	local alpha = (animTime - prevKeyframe.time) / (nextKeyframe.time - prevKeyframe.time)
-	local interpolatedPoses = {}
-
-	for boneName, prevPose in pairs(prevKeyframe.poses) do
-		local nextPose = nextKeyframe.poses[boneName]
+	for bone, prevPose in pairs(prev.poses) do
+		local nextPose = next.poses[bone]
 		if nextPose then
 			local easedAlpha = alpha
 			if nextPose.EasingStyle and nextPose.EasingDirection then
 				local Info = TweenInfos[nextPose.EasingStyle.Name]
 				easedAlpha = TweenService:GetValue(alpha, Info.EasingStyle, Enum.EasingDirection[nextPose.EasingDirection.Name])
 			end
-			interpolatedPoses[boneName] = prevPose.CFrame:Lerp(nextPose.CFrame, easedAlpha)
+			result[bone] = prevPose.CFrame:Lerp(nextPose.CFrame, easedAlpha)
 		else
-			interpolatedPoses[boneName] = prevPose.CFrame
+			result[bone] = prevPose.CFrame
 		end
 	end
 
-	return interpolatedPoses
+	return result
 end
 
-return animationPlayer
+return AnimationPlayer
