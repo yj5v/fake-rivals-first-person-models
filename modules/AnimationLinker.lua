@@ -47,17 +47,17 @@ function animationLinker.new(model1: Model, model2: Model, events: {})
 
 		originalShirtTextures = {},
 		originalTransparencies = {},
-		
 		originalAttachments = {},
 	}, animationLinker)
 
-	for _,Animation in Animations:GetChildren() do
+	-- Load animations and set up events
+	for _, Animation in Animations:GetChildren() do
 		if not Animation:IsA("KeyframeSequence") then
 			continue
 		end
 
 		self.animator:loadAnimation(Animation)
-		
+
 		if events[Animation.Name] then
 			for t, event in events[Animation.Name] do
 				self.animator:addEvent(Animation.Name, t, event)
@@ -65,11 +65,12 @@ function animationLinker.new(model1: Model, model2: Model, events: {})
 		end
 	end
 
-	for _,Descendant in model2:GetDescendants() do
+	-- Store original properties and hide model2 visuals
+	for _, Descendant in model2:GetDescendants() do
 		local MatchingInstance = model1:FindFirstChild(Descendant.Name, true)
-		
+
 		print(Descendant.Name, if MatchingInstance then MatchingInstance.Name else nil)
-		
+
 		if Descendant:IsA("BasePart") then
 			self.originalTransparencies[Descendant] = Descendant.Transparency
 			Descendant.Transparency = 1
@@ -84,11 +85,14 @@ function animationLinker.new(model1: Model, model2: Model, events: {})
 		end
 	end
 
+	-- Rescue logic
+	local rescuedAnimations = {}
+
 	table.insert(self.connections, RunService.RenderStepped:Connect(function()
 		model1.PrimaryPart.CFrame = model2.PrimaryPart.CFrame
 		model1.Parent = model2.Parent
-		
-		for _,Descendant in model2:GetDescendants() do
+
+		for _, Descendant in model2:GetDescendants() do
 			local MatchingInstance = model1:FindFirstChild(Descendant.Name, true)
 
 			if Descendant:IsA("BasePart") then
@@ -97,35 +101,39 @@ function animationLinker.new(model1: Model, model2: Model, events: {})
 				Descendant.CFrame = Descendant.Parent.CFrame:ToObjectSpace(MatchingInstance.WorldCFrame)
 			end
 		end
-		
-		for _,animationTrack: AnimationTrack in Animator:GetPlayingAnimationTracks() do
-			local matchingAnimation = getByAttribute(Animations, animationTrack.Animation.AnimationId, "Animation")
 
+		for _, animationTrack: AnimationTrack in Animator:GetPlayingAnimationTracks() do
+			local matchingAnimation = getByAttribute(Animations, animationTrack.AnimationId, "Animation")
 			if not matchingAnimation then continue end
 
 			local animation = self.animator:getAnimation(matchingAnimation.Name)
 
-			if not animation and animationTrack.TimePosition > 0.01 then
-				repeat task.wait(0) until animationTrack.TimePosition > 0
+			if not animation and animationTrack.TimePosition > 0.01 and not rescuedAnimations[matchingAnimation.Name] then
+				-- Rescue animation only once
 				self.animator:playAnimation(
-					matchingAnimation.Name, 
-					animationTrack.WeightTarget, 
-					animationTrack.Priority.Value, 
-					animationTrack.Speed, 
+					matchingAnimation.Name,
+					animationTrack.WeightTarget,
+					animationTrack.Priority.Value,
+					animationTrack.Speed,
 					animationTrack.Looped,
 					(animationTrack.TimePosition / animationTrack.Length),
 					0
 				)
-			else
+				rescuedAnimations[matchingAnimation.Name] = true
+			elseif animation then
+				-- If already rescued, just update speed
 				self.animator:adjustSpeed(matchingAnimation.Name, animationTrack.Speed)
 			end
 
-			if not animationTrack.IsPlaying and animationTrack.TimePosition < animationTrack.Length then
+			-- Optional: if animation stops playing, remove from rescued
+			if not animationTrack.IsPlaying then
+				rescuedAnimations[matchingAnimation.Name] = nil
 				self.animator:stopAnimation(matchingAnimation.Name, 0.1)
 			end
 		end
 	end))
-	
+
+	-- Sound replication fixing
 	table.insert(self.connections, Players.LocalPlayer.PlayerScripts.Modules.ClientReplicatedClasses.ClientFighter.ClientItem.ChildAdded:Connect(function(child)
 		if child:IsA("Sound") and getByAttribute(Sounds, child.SoundId, "Sound") then
 			child:Stop()
@@ -134,26 +142,28 @@ function animationLinker.new(model1: Model, model2: Model, events: {})
 		end
 	end))
 
+	-- Initial animation rescue if needed
 	table.insert(self.connections, Animator.AnimationPlayed:Connect(function(animationTrack)
-		local matchingAnimation = getByAttribute(Animations, animationTrack.Animation.AnimationId, "Animation")
-
+		local matchingAnimation = getByAttribute(Animations, animationTrack.AnimationId, "Animation")
 		if not matchingAnimation then return end
 
-		repeat task.wait(0) until animationTrack.TimePosition > 0
+		task.spawn(function()
+			repeat task.wait() until animationTrack.TimePosition > 0
 
-		if not self.animator:getAnimation(matchingAnimation.Name) then
-			self.animator:playAnimation(
-				matchingAnimation.Name, 
-				animationTrack.WeightTarget, 
-				animationTrack.Priority.Value, 
-				animationTrack.Speed, 
-				animationTrack.Looped, 
-				0,
-				0.1
-			)
-		else
-			print("ok")
-		end
+			if not self.animator:getAnimation(matchingAnimation.Name) then
+				self.animator:playAnimation(
+					matchingAnimation.Name,
+					animationTrack.WeightTarget,
+					animationTrack.Priority.Value,
+					animationTrack.Speed,
+					animationTrack.Looped,
+					(animationTrack.TimePosition / animationTrack.Length),
+					0
+				)
+			else
+				self.animator:adjustSpeed(matchingAnimation.Name, animationTrack.Speed)
+			end
+		end)
 	end))
 
 	return self
