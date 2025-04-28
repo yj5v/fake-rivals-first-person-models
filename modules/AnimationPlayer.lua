@@ -178,8 +178,12 @@ function AnimationPlayer:playAnimation(name, weight, priority, speed, looped, st
 		remove = false,
 	}
 
+	print("animation is playinggg")
+
 	for i = #self.activeAnimations, 1, -1 do
 		local a = self.activeAnimations[i]
+
+		print(a.name)
 		if a.name == name then
 			print("animation found")
 			
