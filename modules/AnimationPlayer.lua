@@ -77,13 +77,13 @@ function AnimationPlayer.new(model)
 		local sorted = table.clone(self.activeAnimations)
 
 		table.sort(sorted, function(a, b)
-			table.sort(sorted, function(a, b)
-				if a.priority == b.priority then
-					return a.timestamp > b.timestamp
-				else
-					return a.priority > b.priority
-				end
-			end)
+			print("sorting")
+			
+			if a.priority == b.priority then
+				return a.timestamp > b.timestamp
+			else
+				return a.priority > b.priority
+			end
 		end)
 
 		for _, anim in sorted do
