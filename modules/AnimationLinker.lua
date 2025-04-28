@@ -97,9 +97,7 @@ function animationLinker.new(model1: Model, model2: Model, events: {})
 				Descendant.CFrame = Descendant.Parent.CFrame:ToObjectSpace(MatchingInstance.WorldCFrame)
 			end
 		end
-	end))
-	
-	table.insert(self.connections, RunService.Heartbeat:Connect(function()
+		
 		for _,animationTrack: AnimationTrack in Animator:GetPlayingAnimationTracks() do
 			local matchingAnimation = getByAttribute(Animations, animationTrack.Animation.AnimationId, "Animation")
 
@@ -123,7 +121,7 @@ function animationLinker.new(model1: Model, model2: Model, events: {})
 			end
 
 			if not animationTrack.IsPlaying and animationTrack.TimePosition < animationTrack.Length then
-				self.animator:stopAnimation(matchingAnimation.Name, 1)
+				self.animator:stopAnimation(matchingAnimation.Name, 0.2)
 			end
 		end
 	end))
@@ -151,7 +149,7 @@ function animationLinker.new(model1: Model, model2: Model, events: {})
 				animationTrack.Speed, 
 				animationTrack.Looped, 
 				0,
-				1
+				0.2
 			)
 		else
 			print("ok")
