@@ -77,7 +77,13 @@ function AnimationPlayer.new(model)
 		local sorted = table.clone(self.activeAnimations)
 
 		table.sort(sorted, function(a, b)
-			return a.priority > b.priority
+			table.sort(sorted, function(a, b)
+				if a.priority == b.priority then
+					return a.timestamp > b.timestamp
+				else
+					return a.priority > b.priority
+				end
+			end)
 		end)
 
 		for _, anim in sorted do
@@ -185,6 +191,8 @@ function AnimationPlayer:playAnimation(name, weight, priority, speed, looped, st
 		time = startTime or 0,
 		lastTime = startTime or 0,
 		remove = false,
+		
+		timestamp = os.clock()
 	}
 
 	table.insert(self.activeAnimations, anim)
