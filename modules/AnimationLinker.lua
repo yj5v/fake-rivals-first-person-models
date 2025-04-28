@@ -85,8 +85,24 @@ function animationLinker.new(model1: Model, model2: Model, events: {})
 		end
 	end
 
-	-- Rescue logic
-	local rescuedAnimations = {}
+	for _, animationTrack: AnimationTrack in Animator:GetPlayingAnimationTracks() do
+		local matchingAnimation = getByAttribute(Animations, animationTrack.Animation.AnimationId, "Animation")
+		if not matchingAnimation then continue end
+
+		local animation = self.animator:getAnimation(matchingAnimation.Name)
+
+		if not animation then
+			self.animator:playAnimation(
+				matchingAnimation.Name,
+				animationTrack.WeightTarget,
+				animationTrack.Priority.Value,
+				animationTrack.Speed,
+				animationTrack.Looped,
+				(animationTrack.TimePosition / animationTrack.Length),
+				0
+			)
+		end
+	end
 
 	table.insert(self.connections, RunService.RenderStepped:Connect(function()
 		model1.PrimaryPart.CFrame = model2.PrimaryPart.CFrame
@@ -107,27 +123,10 @@ function animationLinker.new(model1: Model, model2: Model, events: {})
 			if not matchingAnimation then continue end
 
 			local animation = self.animator:getAnimation(matchingAnimation.Name)
+			
+			self.animator:adjustSpeed(matchingAnimation.Name, animationTrack.Speed)			
 
-			if not animation and animationTrack.TimePosition > 0.01 and not rescuedAnimations[matchingAnimation.Name] then
-				-- Rescue animation only once
-				self.animator:playAnimation(
-					matchingAnimation.Name,
-					animationTrack.WeightTarget,
-					animationTrack.Priority.Value,
-					animationTrack.Speed,
-					animationTrack.Looped,
-					(animationTrack.TimePosition / animationTrack.Length),
-					0
-				)
-				rescuedAnimations[matchingAnimation.Name] = true
-			elseif animation then
-				-- If already rescued, just update speed
-				self.animator:adjustSpeed(matchingAnimation.Name, animationTrack.Speed)
-			end
-
-			-- Optional: if animation stops playing, remove from rescued
 			if not animationTrack.IsPlaying then
-				rescuedAnimations[matchingAnimation.Name] = nil
 				self.animator:stopAnimation(matchingAnimation.Name, 0.1)
 			end
 		end
