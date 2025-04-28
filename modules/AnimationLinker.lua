@@ -160,7 +160,7 @@ function animationLinker.new(model1: Model, model2: Model, events: {})
 					animationTrack.Speed,
 					animationTrack.Looped,
 					(animationTrack.TimePosition / animationTrack.Length),
-					0
+					0.1
 				)
 			else
 				self.animator:adjustSpeed(matchingAnimation.Name, animationTrack.Speed)
