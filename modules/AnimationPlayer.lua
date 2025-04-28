@@ -167,7 +167,8 @@ function AnimationPlayer:playAnimation(name, weight, priority, speed, looped, st
     for i = #self.activeAnimations, 1, -1 do
         local a = self.activeAnimations[i]
         if a.name == name then
-            table.remove(self.activeAnimations, i)
+            a.remove = true
+		print("found")
         end
     end
 
