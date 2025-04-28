@@ -61,6 +61,8 @@ function animationPlayer.new(model: Model)
 			if anim.fadeSpeed then
 				local direction = if anim.targetWeight >= anim.weight then 1 else -1
 
+				print(anim.fadeSpeed, anim.weight, anim.targetWeight)
+
 				anim.weight += (dt / anim.fadeSpeed) * direction
 
 				if direction < 0 then
