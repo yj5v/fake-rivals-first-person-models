@@ -58,18 +58,20 @@ function animationPlayer.new(model: Model)
 				end
 			end
 			
-			local direction = if anim.targetWeight >= anim.weight then 1 else -1
+			if anim.fadeSpeed then
+				local direction = if anim.targetWeight >= anim.weight then 1 else -1
 
-			anim.weight += (dt / anim.fadeSpeed) * direction
+				anim.weight += (dt / anim.fadeSpeed) * direction
 
-			if direction < 0 then
-				print((dt / anim.fadeSpeed) * direction)
-			end
+				if direction < 0 then
+					print((dt / anim.fadeSpeed) * direction)
+				end
 
-			if direction == 1 then
-				anim.weight = math.clamp(anim.weight, 0, anim.targetWeight)
-			else
-				anim.weight = math.clamp(anim.weight, anim.targetWeight, 1)
+				if direction == 1 then
+					anim.weight = math.clamp(anim.weight, 0, anim.targetWeight)
+				else
+					anim.weight = math.clamp(anim.weight, anim.targetWeight, 1)
+				end
 			end
 			
 			self:checkEvents(anim.name, anim.lastTime % 1, anim.time % 1, anim.looped)
