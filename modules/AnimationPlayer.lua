@@ -73,62 +73,66 @@ function AnimationPlayer.new(model)
 
 		-- Blending animations
 		local blended = {}
-		local weights = {}
-		local sorted = table.clone(self.activeAnimations)
+local weights = {}
+local sorted = table.clone(self.activeAnimations)
 
-		table.sort(sorted, function(a, b)
-			print("sorting")
-			
-			if a.priority == b.priority then
-				return a.timestamp > b.timestamp
-			else
-				return a.priority > b.priority
-			end
-		end)
+table.sort(sorted, function(a, b)
+    if a.priority == b.priority then
+        return a.timestamp > b.timestamp
+    else
+        return a.priority > b.priority
+    end
+end)
 
-		for _, anim in sorted do
-			if anim.weight <= 0 then continue end
-			local poses = self:_calculatePose(anim.time, anim.name)
-			local w = anim.weight
+for _, anim in sorted do
+    if anim.weight <= 0 then continue end
+    local poses = self:_calculatePose(anim.time, anim.name)
+    local w = anim.weight
 
-			for bone, cf in pairs(poses) do
-				local current = blended[bone]
-				local currWeight = weights[bone] or 0
-				local blendWeight = math.min(w, 1 - currWeight)
+    for bone, cf in pairs(poses) do
+        local currentWeight = weights[bone] or 0
 
-				if current then
-					local total = currWeight + blendWeight
-					local alpha = blendWeight / total
-					blended[bone] = current:Lerp(cf, alpha)
-				else
-					blended[bone] = cf
-				end
+        if currentWeight >= 1 then
+            -- Already fully controlled by higher-priority animation
+            continue
+        end
 
-				weights[bone] = currWeight + blendWeight
-			end
-		end
+        local blendWeight = math.min(w, 1 - currentWeight)
+        local existing = blended[bone]
 
-		-- Blend with default pose if needed
-		for bone, motor in pairs(self.motorCache) do
-			local w = weights[bone] or 0
-			if w < 1 then
-				local current = blended[bone]
-				local default = self.defaultPose[bone] or CFrame.identity
-				if current then
-					blended[bone] = current:Lerp(default, 1 - w)
-				else
-					blended[bone] = default
-				end
-			end
-		end
+        if existing then
+            local totalWeight = currentWeight + blendWeight
+            local alpha = blendWeight / totalWeight
+            blended[bone] = existing:Lerp(cf, alpha)
+        else
+            blended[bone] = cf
+        end
 
-		-- Apply final transforms
-		for bone, cf in pairs(blended) do
-			local motor = self.motorCache[bone]
-			if motor then
-				motor.Transform = cf
-			end
-		end
+        weights[bone] = currentWeight + blendWeight
+    end
+end
+
+-- Blend with default pose if needed
+for bone, motor in pairs(self.motorCache) do
+    local w = weights[bone] or 0
+    if w < 1 then
+        local current = blended[bone]
+        local default = self.defaultPose[bone] or CFrame.identity
+        if current then
+            blended[bone] = current:Lerp(default, 1 - w)
+        else
+            blended[bone] = default
+        end
+    end
+end
+
+-- Apply final transforms
+for bone, cf in pairs(blended) do
+    local motor = self.motorCache[bone]
+    if motor then
+        motor.Transform = cf
+    end
+end
 	end)
 
 	self._running = true
