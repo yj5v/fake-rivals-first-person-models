@@ -68,8 +68,10 @@ function animationPlayer.new(model: Model)
 
 				if not anim.looped and anim.time >= 0.99 then
 					anim.time = 0.99
-					if not anim.remove then
-						self:stopAnimation(anim.name)
+					anim.playing = false
+					anim.targetWeight = 0
+					if not anim.fadeSpeed then
+						anim.remove = true
 					end
 				end
 			end
