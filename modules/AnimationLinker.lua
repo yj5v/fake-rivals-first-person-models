@@ -90,6 +90,7 @@ function animationLinker.new(model1: Model, model2: Model, events: {})
 		if not matchingAnimation then continue end
 
 		local animation = self.animator:getAnimation(matchingAnimation.Name)
+		print("animation played")
 
 		if not animation then
 			self.animator:playAnimation(
@@ -145,6 +146,8 @@ function animationLinker.new(model1: Model, model2: Model, events: {})
 	table.insert(self.connections, Animator.AnimationPlayed:Connect(function(animationTrack)
 		local matchingAnimation = getByAttribute(Animations, animationTrack.Animation.AnimationId, "Animation")
 		if not matchingAnimation then return end
+
+		print("animation actually played")
 
 		task.spawn(function()
 			repeat task.wait() until animationTrack.TimePosition > 0
