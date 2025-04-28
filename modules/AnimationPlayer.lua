@@ -36,13 +36,6 @@ function animationPlayer.new(model: Model)
 				anim.remove = true
 			end
 
-			if anim.remove then
-				print("Ok")
-				
-				table.remove(self.activeAnimations, i)
-				continue
-			end
-
 			if anim.playing then
 				local animData = self.animations[anim.name]
 				local duration = animData and (animData.endTime - animData.startTime) or 1
