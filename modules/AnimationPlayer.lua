@@ -57,8 +57,8 @@ function AnimationPlayer.new(model)
 			end
 
 			-- Check for finished fades
-			if anim.weight <= 0 and anim.targetWeight == 0 then
-				anim.remove = true
+			if math.abs(anim.weight) <= 0.001 and anim.targetWeight == 0 then
+    				anim.remove = true
 			end
 
 			-- Fire events
@@ -164,30 +164,29 @@ function AnimationPlayer:loadAnimation(keyframeSeq)
 end
 
 function AnimationPlayer:playAnimation(name, weight, priority, speed, looped, startTime, fadeSpeed)
-	local anim = {
-		name = name,
-		weight = 0,
-		targetWeight = weight or 1,
-		fadeSpeed = fadeSpeed or 0.2,
-		priority = priority or 1,
-		speed = speed or 1,
-		looped = looped or false,
-		playing = true,
-		time = startTime or 0,
-		lastTime = startTime or 0,
-		remove = false,
-	}
+    for i = #self.activeAnimations, 1, -1 do
+        local a = self.activeAnimations[i]
+        if a.name == name then
+            table.remove(self.activeAnimations, i)
+        end
+    end
 
-	for i = #self.activeAnimations, 1, -1 do
-		local a = self.activeAnimations[i]
-		if a.name == name then
-			anim.weight = a.weight
-			table.remove(self.activeAnimations, i)
-		end
-	end
+    local anim = {
+        name = name,
+        weight = 0,
+        targetWeight = weight or 1,
+        fadeSpeed = fadeSpeed or 0.2,
+        priority = priority or 1,
+        speed = speed or 1,
+        looped = looped or false,
+        playing = true,
+        time = startTime or 0,
+        lastTime = startTime or 0,
+        remove = false,
+    }
 
-	table.insert(self.activeAnimations, anim)
-	self._running = true
+    table.insert(self.activeAnimations, anim)
+    self._running = true
 end
 
 function AnimationPlayer:stopAnimation(name, fadeSpeed)
