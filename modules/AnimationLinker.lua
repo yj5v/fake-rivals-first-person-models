@@ -152,19 +152,15 @@ function animationLinker.new(model1: Model, model2: Model, events: {})
 		task.spawn(function()
 			repeat task.wait() until animationTrack.TimePosition > 0
 
-			if not self.animator:getAnimation(matchingAnimation.Name) then
-				self.animator:playAnimation(
-					matchingAnimation.Name,
-					animationTrack.WeightTarget,
-					animationTrack.Priority.Value,
-					animationTrack.Speed,
-					animationTrack.Looped,
-					(animationTrack.TimePosition / animationTrack.Length),
-					0.1
-				)
-			else
-				self.animator:adjustSpeed(matchingAnimation.Name, animationTrack.Speed)
-			end
+			self.animator:playAnimation(
+				matchingAnimation.Name,
+				animationTrack.WeightTarget,
+				animationTrack.Priority.Value,
+				animationTrack.Speed,
+				animationTrack.Looped,
+				(animationTrack.TimePosition / animationTrack.Length),
+				0.1
+			)
 		end)
 	end))
 
