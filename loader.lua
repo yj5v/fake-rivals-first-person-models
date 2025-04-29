@@ -3,7 +3,7 @@ if shared.Faker then
 end
 
 local BASE_URL = "https://raw.githubusercontent.com/yj5v/fake-rivals-first-person-models/main/modules/"
-local INDEX_URL = BASE_URL .. "index.json"
+local INDEX_URL = BASE_URL .. "index.lua"
 
 local HttpService = game:GetService("HttpService")
 
@@ -43,8 +43,7 @@ local success, response = pcall(function()
 end)
 
 if success then
-    local moduleList = HttpService:JSONDecode(response)
-    for _, moduleName in ipairs(moduleList) do
+    for _, moduleName in ipairs(response) do
         Faker.__loadModule(moduleName)
     end
 else
