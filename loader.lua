@@ -43,7 +43,7 @@ local success, response = pcall(function()
 end)
 
 if success then
-    for _, moduleName in ipairs(response) do
+    for _, moduleName in ipairs( loadstring(response)() ) do
         Faker.__loadModule(moduleName)
     end
 else
