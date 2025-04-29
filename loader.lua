@@ -2,7 +2,7 @@ if shared.Faker then
     return
 end
 
-local BASE_URL = "https://raw.githubusercontent.com/yj5v/fake-rivals-first-person-models/main/modules/"
+local BASE_URL = "https://raw.githubusercontent.com/yj5v/fake-rivals-first-person-models/main/"
 local INDEX_URL = BASE_URL .. "index.lua"
 
 local HttpService = game:GetService("HttpService")
@@ -25,7 +25,7 @@ function Faker.__loadModule(moduleName: string)
     end
 
     local success, result = pcall(function()
-        local source = game:HttpGet(BASE_URL .. moduleName .. ".lua", true)
+        local source = game:HttpGet(BASE_URL .. "modules/" .. moduleName .. ".lua", true)
         return loadstring(source)()
     end)
 
