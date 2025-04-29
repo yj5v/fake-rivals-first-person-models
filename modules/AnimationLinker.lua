@@ -135,7 +135,7 @@ function animationLinker.new(model1: Model, model2: Model, events: {})
 
 	-- Sound replication fixing
 	table.insert(self.connections, Players.LocalPlayer.PlayerScripts.Modules.ClientReplicatedClasses.ClientFighter.ClientItem.ChildAdded:Connect(function(child)
-		if child:IsA("Sound") and getByAttribute(Sounds, child.SoundId, "Sound") then
+		if child:IsA("Sound") and getByAttribute(Sounds, child.SoundId, "Sound") and model1:IsDescendantOf(workspace) then
 			child:Stop()
 			child.SoundId = getByAttribute(Sounds, child.SoundId, "Sound").SoundId
 			child:Play()
