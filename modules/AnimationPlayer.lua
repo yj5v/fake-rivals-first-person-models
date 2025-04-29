@@ -2,7 +2,7 @@
 
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
-local TweenInfos = shared.Faker.Modules.TweenInfos
+local TweenInfos = shared.Faker.__loadModule("TweenInfos")
 
 local animationPlayer = {}
 animationPlayer.__index = animationPlayer
