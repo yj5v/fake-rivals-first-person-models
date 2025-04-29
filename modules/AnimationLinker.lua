@@ -1,7 +1,7 @@
 local Players = game:GetService("Players")
 
 local RunService = game:GetService("RunService")
-local AnimationPlayer = shared.Faker.Modules.AnimationPlayer
+local AnimationPlayer = shared.Faker.__loadModule("AnimationPlayer")
 
 local function getByAttribute(container: Instance, targetId: string, attributeName: string)
 	local matchingInstance = nil
