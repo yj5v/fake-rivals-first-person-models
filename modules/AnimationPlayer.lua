@@ -150,6 +150,7 @@ function animationPlayer:addEvent(animationName: string, t: number, event: (mode
 			end
 
 			keyFrame.event = event
+			print("done")
 			return
 		end
 	end
