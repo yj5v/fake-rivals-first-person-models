@@ -318,11 +318,11 @@ function animationPlayer:Destroy()
 	warn("[Destroy] Animation player destroyed")
 end
 
-function animationPlayer:__calculatePose(t, animationName)
+function animationPlayer:__calculatePose(t: number, animationName: string)
 	local animation = self.animations[animationName]
 	if not animation then
-		warn("[CalcPose] Animation not found:", animationName)
-		return nil
+		warn("Animation not found:", animationName)
+		return {}, nil
 	end
 
 	t = t % 1
@@ -344,6 +344,15 @@ function animationPlayer:__calculatePose(t, animationName)
 		end
 	end
 
+	if animTime == nextKeyframe.time or animTime == prevKeyframe.time then
+		local raw = animTime == nextKeyframe.time and nextKeyframe or prevKeyframe
+		local result = {}
+		for boneName, pose in pairs(raw.poses) do
+			result[boneName] = pose.CFrame
+		end
+		return result, raw.event
+	end
+
 	local alpha = (animTime - prevKeyframe.time) / (nextKeyframe.time - prevKeyframe.time)
 	local interpolatedPoses = {}
 
@@ -353,20 +362,19 @@ function animationPlayer:__calculatePose(t, animationName)
 			local easedAlpha = alpha
 			if nextPose.EasingStyle and nextPose.EasingDirection then
 				local Info = TweenInfos[nextPose.EasingStyle.Name]
-				if not Info then
-					warn("[CalcPose] Missing TweenInfo for style:", nextPose.EasingStyle.Name)
-				else
+				if Info and Info.EasingStyle and Enum.EasingDirection[nextPose.EasingDirection.Name] then
 					easedAlpha = TweenService:GetValue(alpha, Info.EasingStyle, Enum.EasingDirection[nextPose.EasingDirection.Name])
+				else
+					warn("Invalid easing style or direction:", nextPose.EasingStyle, nextPose.EasingDirection)
 				end
 			end
 			interpolatedPoses[boneName] = prevPose.CFrame:Lerp(nextPose.CFrame, easedAlpha)
 		else
-			warn("[CalcPose] Missing next pose for bone:", boneName)
 			interpolatedPoses[boneName] = prevPose.CFrame
 		end
 	end
 
-	return interpolatedPoses
+	return interpolatedPoses, nil
 end
 
 return animationPlayer
