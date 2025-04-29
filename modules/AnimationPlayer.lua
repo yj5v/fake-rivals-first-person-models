@@ -88,8 +88,6 @@ function animationPlayer.new(model: Model)
 					warn("[Play] Animation ended (non-looped):", anim.name)
 				end
 			end
-
-			self:checkEvents(anim.name, anim.lastTime % 1, anim.time % 1, anim.looped)
 		end
 
 		local blendedPoses = {}
@@ -103,7 +101,15 @@ function animationPlayer.new(model: Model)
 		for _, anim in actives do
 			if anim.weight <= 0 then continue end
 
-			local poses = self:__calculatePose(anim.time, anim.name)
+			local poses, keyframeEvent = self:__calculatePose(anim.time, anim.name)
+
+			if keyframeEvent and typeof(keyframeEvent) == "function" then
+    				keyframeEvent(self.model)
+				warn("[Event] Event fired successfully")
+			else
+				warn("[Event] Something went wrong with firing event.")
+			end
+			
 			if not poses then
 				warn("[Blend] Failed to calculate pose for:", anim.name)
 				continue
