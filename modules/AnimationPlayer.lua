@@ -132,26 +132,29 @@ function animationPlayer.new(model: Model)
 	return self
 end
 
-function animationPlayer:addEvent(animationName: string, t: number, event: () -> ())
+function animationPlayer:addEvent(animationName: string, t: number, event: (model: Model) -> ())
 	local animation = self.animations[animationName]
 
 	if not animation then
 		return warn("Animation not found.")
 	end
-	
-	print("Ok")
+
+	local startTime = animation.startTime
+	local endTime = animation.endTime
+	local absoluteTime = startTime + t * (endTime - startTime)
 
 	for _, keyFrame in animation.keyFrames do
-		if keyFrame.time ~= t then
-			continue
-		end
+		if math.abs(keyFrame.time - absoluteTime) <= EPSILON then
+			if keyFrame.event then
+				return warn("Event already applied.")
+			end
 
-		if keyFrame.event then
-			return warn("Event already applied.")
+			keyFrame.event = event
+			return
 		end
-
-		keyFrame.event = event
 	end
+
+	warn("No keyframe found at normalized time:", t)
 end
 
 function animationPlayer:checkEvents(animationName, lastTime, currentTime, looped)
